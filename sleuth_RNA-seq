@@ -1,0 +1,38 @@
+
+library(sleuth)
+library(plyr)
+#set working  directory to the directory having the abundance.tsv files resulting from Kallisto
+base_dir<- "C:/Users/Raquel/Desktop/kallisto"
+sample_id<- dir(file.path(base_dir, "results")) #this creates a vector with all the sample ids
+mal<-c('index6L2','index7L3', 'index8L4')
+ff<- c('index6L1', 'index1L5', 'index2L6')
+#with this function I am mounting the paths fro the samples as well as importing the results for each sample
+path_abun<- function(samples) {
+             direcs<-character(length(samples))
+             direcs<-sprintf("C:/Users/Raquel/Desktop/kallisto/results/%s", samples)
+             abundance<- list()
+                       for (i in 1:length(direcs)) {
+                                        setwd(direcs[i])
+                                        abundance[[i]]<- read_kallisto('abundance.tsv')
+                                        }
+                                 return(abundance)
+}
+#with this function I am removing the abundance table from the results imported in the previous functio
+#as well as renameing the columns so I can know from each sample the it is
+abuntable<- function(abundance) {
+            tables<- list()
+            names<-list()
+            for (i in 1:length(abundance)) {
+            tables[[i]]<- as.data.frame(abundance[[i]][1])
+            names[[i]]<-sprintf("target_id len_%s eff_len%s est_counts%s tpm%s", i,i,i,i)
+            names2<- sapply(names, strsplit, split=" ")
+            names(tables[[i]])<-as.vector(names2[[i]])}
+            return(tables)
+}
+
+mal_path<- path_abun(mal)
+maltables<- abuntable(mal_path)
+#now I am combinig the samples from each group
+setwd(base_dir)
+maltable<- as.data.frame(join_all(maltables, by='target_id',type='full'))
+
